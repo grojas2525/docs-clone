@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import Modal from './Modal';
 import { addDoc, collection, onSnapshot } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 export default function Docs({
     database
@@ -10,10 +11,13 @@ export default function Docs({
     const handleClose= () => setOpen(false);
     const [title, setTitle] = useState('');
     const collectionRef = collection(database, 'docsData');
+    let navigate = useNavigate();
+    const [docsData, setDocsData] = useState([]);
     const isMounted = useRef();
     const addData = () => {
         addDoc(collectionRef, {
-            title: title
+            title: title,
+            docsDesc: ''
         })
         .then(() => {
             alert('Data Added');
@@ -26,12 +30,16 @@ export default function Docs({
 
     const getData = () => {
         onSnapshot(collectionRef, (data) => {
-            console.log(data.docs.map((doc) => {
+            setDocsData(data.docs.map((doc) => {
                 return {...doc.data(), id: doc.id}
             }))
         })
     };
-    
+
+    const getID = (id) => {
+        navigate(`/editDocs/${id}`)
+    }
+
     useEffect(() => {
         if(isMounted.current){
             return 
@@ -40,6 +48,7 @@ export default function Docs({
         isMounted.current = true;
         getData()
     }, [])
+
 
     return (
         <div className='docs-main'>
@@ -51,7 +60,16 @@ export default function Docs({
             >
                 Add a Document
             </button>
-
+            <div className='grid-main'>
+                {docsData.map((doc) => {
+                    return (
+                        <div className='grid-child' onClick={() => getID(doc.id)}>
+                            <p>{doc.title}</p>
+                            <div dangerouslySetInnerHTML={{__html: doc.docsDesc}} />
+                        </div>
+                    )
+                })}
+            </div>
             <Modal
                 open={open}
                 setOpen={setOpen}
